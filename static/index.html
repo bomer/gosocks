@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>Clock Server via WebSocket</title>
+<body>
+    <h2>Time Reporting From Server</h2>
+    <p id="status"></p>
+    <p id="clock"></p>
+    <p id="echoback"></p>
+    
+    <div>
+      <form action="#" onsubmit="sendmsg();return false;">
+      msg:<input id="msg">
+      </form>
+      <div id="chatlog" style="background:lavender">
+    
+    
+      </div>
+    </div>
+
+<script language="JavaScript">
+
+  var hostport = window.location.host
+  
+	var timeuri = "ws://"+hostport+"/time";
+  var echouri = "ws://"+hostport+"/echo";
+  var sendmsguri = "ws://"+hostport+"/msg";
+  
+	var timesock;
+	var echosock;
+	var stats;
+	var clock;
+  var echoback;
+  var sendmsgsock;
+	function updatestat(msg, e) {
+		stats.innerHTML = '<span style="color: red;">'+msg+'</span> '+e.data;
+	}
+	function updateclock(e) {
+		clock.innerHTML = '<span style="color: blue;">'+e.data+'</span>';
+		echosock.send('<span style="color:green;">Sent by client: '+e.data+'</span>');
+	}
+	function init() {
+		MakeSock = (typeof WebSocket !== "undefined")?WebSocket:MozWebSocket;
+    
+
+    echosock = new MakeSock(echouri);
+		echoback = document.getElementById("echoback");
+		echosock.onmessage = function(e) { echoback.innerHTML=e.data };
+    
+    timesock = new MakeSock(timeuri);
+
+    sendmsgsock = new MakeSock(sendmsguri);
+    sendmsgsock.onmessage = function(e) { chatlog.innerHTML+=e.data + "<br>" };
+
+    
+		stats = document.getElementById("status");
+    clock = document.getElementById("clock");
+    msg = document.getElementById("msg");
+    
+
+		timesock.onopen = function(e) { updatestat("Open:", e) };
+    timesock.onclose = function(e) { updatestat("Close:", e) };
+    
+		timesock.onmessage = function(e) { updateclock(e) };
+    timesock.onerror = function(e) { updatestat("Error:", e) };
+    
+    function sendmsg(){
+      return false;
+    }
+  } 
+  
+  init()
+
+function sendmsg(){
+    sendmsgsock.send(msg.value);
+  }
+
+</script>
+</body>
+</html>
