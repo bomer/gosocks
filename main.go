@@ -9,6 +9,10 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+// rooms := map[string]
+var all map[string]*websocket.Conn
+var allconnections []*websocket.Conn
+
 //EchoServer  Echo everything back.
 func EchoServer(ws *websocket.Conn) {
 	io.Copy(ws, ws)
@@ -28,15 +32,28 @@ func TimeServer(ws *websocket.Conn) {
 // MsgServer recieves a msg and sends it back to all users.
 func MsgServer(ws *websocket.Conn) {
 	var message string
+	// all.(ws)
+	allconnections = append(allconnections, ws)
 	for {
 		websocket.Message.Receive(ws, &message)
-		if _, err := ws.Write([]byte(message)); err != nil {
-			log.Println("SendingBack: ", err)
+		for _, aWs := range allconnections {
+			if _, err := aWs.Write([]byte(message)); err != nil {
+				log.Println("SendingBack: ", err)
+			}
+
 		}
+
+		// if _, err := ws.Write([]byte(message)); err != nil {
+		// 	log.Println("SendingBack: ", err)
+		// }
+		log.Println("I hope I didn't crash: ")
 	}
 }
 
 func main() {
+
+	//Init
+	all = make(map[string]*websocket.Conn)
 
 	http.Handle("/", http.FileServer(http.Dir("./static")))
 
