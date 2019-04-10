@@ -12,7 +12,8 @@ import (
 // rooms := map[string]
 var all map[string]*websocket.Conn
 var allconnections []*websocket.Conn
-var history []string
+
+// var history []string
 
 //EchoServer  Echo everything back.
 func EchoServer(ws *websocket.Conn) {
