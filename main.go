@@ -12,6 +12,7 @@ import (
 // rooms := map[string]
 var all map[string]*websocket.Conn
 var allconnections []*websocket.Conn
+var history []string
 
 //EchoServer  Echo everything back.
 func EchoServer(ws *websocket.Conn) {
@@ -29,24 +30,33 @@ func TimeServer(ws *websocket.Conn) {
 	}
 }
 
+func remove(slice []*websocket.Conn, s int) []*websocket.Conn {
+	return append(slice[:s], slice[s+1:]...)
+}
+
 // MsgServer recieves a msg and sends it back to all users.
 func MsgServer(ws *websocket.Conn) {
 	var message string
 	// all.(ws)
+	alive := true
 	allconnections = append(allconnections, ws)
 	for {
 		websocket.Message.Receive(ws, &message)
-		for _, aWs := range allconnections {
+		for i, aWs := range allconnections {
+
 			if _, err := aWs.Write([]byte(message)); err != nil {
-				log.Println("SendingBack: ", err)
+				log.Println("Error!!: ", err)
+				aWs.Close()
+				allconnections = remove(allconnections, i)
+				alive = false
+
 			}
 
 		}
-
-		// if _, err := ws.Write([]byte(message)); err != nil {
-		// 	log.Println("SendingBack: ", err)
-		// }
 		log.Println("I hope I didn't crash: ")
+		if !alive {
+			break
+		}
 	}
 }
 
@@ -61,7 +71,7 @@ func main() {
 	http.Handle("/time", websocket.Handler(TimeServer))
 	http.Handle("/msg", websocket.Handler(MsgServer))
 
-	err := http.ListenAndServe(":8000", nil)
+	err := http.ListenAndServe(":8002", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: " + err.Error())
 	}
